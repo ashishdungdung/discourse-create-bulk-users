@@ -1,74 +1,78 @@
-# 🚀 Discourse Bulk User Creator (Excel → API)
+# Discourse Bulk User Creator
 
-Create **multiple users in Discourse** effortlessly using an **Excel file** and the **Discourse Admin API**.
+Create many Discourse users from an Excel workbook.
 
-This utility is useful when migrating communities, onboarding users in bulk, or setting up test environments.
+## What changed
+- No hardcoded secrets in code
+- Uses CLI args and environment variables
+- Validates required columns before running
+- Writes per-row status, response, user id, and notes back to the sheet
+- Supports `--dry-run` to validate safely before API calls
+- Generates a strong password when the `password` cell is empty
 
----
+## Files
+- `users.py`: bulk creation script
+- `users.xlsx`: input template
+- `requirements.txt`: dependencies
 
-## ✨ Features
+## Requirements
+- Python 3.9+
+- Discourse admin API key
+- Access to `https://<your-discourse-site>`
 
-- 📄 Read users from an **Excel (.xlsx)** file  
-- 🔐 Uses **official Discourse API** (safe & supported)
-- ⚡ Create users **in bulk** with a single command
-- 🧩 Simple, minimal Python script – easy to customize
-- 🛠️ Ideal for **migrations, staging, or internal communities**
+## Install
+```bash
+python -m venv .venv
+. .venv/Scripts/activate  # Windows PowerShell: .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
 
----
+## Configure
+Set environment variables (recommended):
 
-## 📂 Project Structure
+```powershell
+$env:DISCOURSE_SITE_URL="https://community.example.com"
+$env:DISCOURSE_API_KEY="your_api_key"
+$env:DISCOURSE_API_USERNAME="admin_username"
+```
 
-discourse-create-bulk-users/
-│
-├── users.py # Main script
-├── users.xlsx # Sample input Excel file
-├── requirements.txt # Python dependencies
-└── README.md
----
+Or pass these with CLI flags.
 
-## 🧑‍💻 ## 🧑‍💻 Requirements
+## Excel format (`users.xlsx`)
+Row 1 must include these columns:
+- `username` (required)
+- `email` (required)
+- `name` (required)
+- `password` (optional)
 
-- Python **3.7+**
-- A **Discourse Admin account**
-- Discourse **API Key**
-- Access to your Discourse instance
+Output columns are auto-managed by the script:
+- `User Status`
+- `API Response`
+- `User ID`
+- `Notes`
 
----
+If `password` is blank, the script generates a temporary strong password.
 
-## 🔑 Discourse API Setup
-
-1. Log in as **Admin** on your Discourse site  
-2. Go to:  
-   **Admin → API → New API Key**
-3. Create a key with:
-   - **Scope**: Global
-   - **User**: Admin user
-4. Note down:
-   - API Key
-   - Admin Username
-   - Forum Base URL (e.g. `https://community.example.com`)
-
----
-
-## 📄 Excel File Format (`users.xlsx`)
-
-Ensure your Excel file contains the following columns:
-
-| Column Name | Description |
-|------------|-------------|
-| `name` | Full name of the user |
-| `email` | Email address |
-| `username` | Discourse username |
-
-> ⚠️ Passwords are **not required**.  
-Discourse will automatically send **activation emails**.
-
----
-
-## 📦 Installation
-
-Clone the repository:
+## Usage
+Dry run first:
 
 ```bash
-git clone https://github.com/ashishdungdung/discourse-create-bulk-users.git
-cd discourse-create-bulk-users
+python users.py --file users.xlsx --dry-run
+```
+
+Create users:
+
+```bash
+python users.py --file users.xlsx --active --approved --suppress-welcome-message
+```
+
+You can override config directly:
+
+```bash
+python users.py --file users.xlsx --site-url https://community.example.com --api-key <key> --api-username <admin>
+```
+
+## Notes
+- Rows with an existing `User ID` are skipped.
+- Rows missing required fields are marked `Invalid row`.
+- Results are written back into the same workbook.
